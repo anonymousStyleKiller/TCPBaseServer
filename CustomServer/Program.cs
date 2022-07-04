@@ -1,0 +1,6 @@
+﻿
+ static void Main()
+ {
+
+ }
+Main();
