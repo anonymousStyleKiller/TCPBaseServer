@@ -1,6 +1,0 @@
-﻿
- static void Main()
- {
-
- }
-Main();
