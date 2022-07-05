@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 using ServerBase.Interfaces;
+using ServerBase.Parsers;
 
 namespace ServerBase;
 
@@ -15,10 +16,28 @@ public class Server
 
     public void Start()
     {
-        var listener = new TcpListener(IPAddress.Any, 5000);
-        listener.Start();
-        var client = listener.AcceptTcpClient();
-        using var stream = client.GetStream();
-        _handler.Handle(stream);
+        var tcpListener = new TcpListener(IPAddress.Any, 5000);
+        tcpListener.Start();
+        while (true)
+        {
+            try
+            {
+                using var client = tcpListener.AcceptTcpClient();
+                using var stream = client.GetStream();
+                using var reader = new StreamReader(stream);
+                var firstLine = reader.ReadLine();
+                for (string line = null; line != string.Empty; line = reader.ReadLine())
+                    ;
+
+                var request = RequestParser.Parse(firstLine);
+                _handler.Handle(stream, request);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+        }
+       
     }
 }
