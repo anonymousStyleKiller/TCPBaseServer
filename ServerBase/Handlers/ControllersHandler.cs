@@ -52,20 +52,56 @@ public class ControllersHandler : IHandler
         }
     }
 
-    private void WriteControllerResponse(object response, Stream stream)
+    public async Task HandleAsync(Stream stream, Request request)
     {
-        if (response is string str)
-        {
-            using var writer = new StreamWriter(stream, leaveOpen: true);
-            writer.Write(str);
-        }
-        else if (response is byte[] buffer)
-        {
-            stream.Write(buffer, 0, buffer.Length);
-        }
+        if(!_routes.TryGetValue(request.Path, out var func))
+            await ResponseWriter.WriteStatusAsync(HttpStatusCode.NotFound, stream);
         else
         {
-           WriteControllerResponse(JsonConvert.SerializeObject(response), stream);
+            await ResponseWriter.WriteStatusAsync(HttpStatusCode.OK, stream);
+            await WriteControllerResponseAsync(func(), stream);
+        }
+    }
+
+    private void WriteControllerResponse(object response, Stream stream)
+    {
+        switch (response)
+        {
+            case string str:
+            {
+                using var writer = new StreamWriter(stream, leaveOpen: true);
+                writer.Write(str);
+                break;
+            }
+            case byte[] buffer:
+                stream.Write(buffer, 0, buffer.Length);
+                break;
+            default:
+                WriteControllerResponse(JsonConvert.SerializeObject(response), stream);
+                break;
+        }
+    }
+    
+    private async Task WriteControllerResponseAsync(object response, Stream stream)
+    {
+        switch (response)
+        {
+            case string str:
+            {
+                await using var writer = new StreamWriter(stream, leaveOpen: true);
+                await writer.WriteAsync(str);
+                break;
+            }
+            case byte[] buffer:
+                stream.Write(buffer, 0, buffer.Length);
+                break;
+            case Task task:
+                await task;
+                await WriteControllerResponseAsync(task.GetType().GetProperty("Result").GetValue(task), stream);
+                break;
+            default:
+                await WriteControllerResponseAsync(JsonConvert.SerializeObject(response), stream);
+                break;
         }
     }
 }

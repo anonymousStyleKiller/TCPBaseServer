@@ -14,8 +14,9 @@ public class Server
         _handler = handler;
     }
 
-    public void Start()
+    public void StartV1()
     {
+        Console.WriteLine("Server started V1");
         var tcpListener = new TcpListener(IPAddress.Any, 5000);
         tcpListener.Start();
         while (true)
@@ -38,6 +39,37 @@ public class Server
                 throw;
             }
         }
-       
+    }
+
+    public async Task StartV2Async()
+    {
+        Console.WriteLine("Server started V2");
+        var tcpListener = new TcpListener(IPAddress.Any, 5000);
+        tcpListener.Start();
+        while (true)
+        {
+            using var client = await tcpListener.AcceptTcpClientAsync();
+            var _ = ProcessClientAsync(client);
+        }
+    }
+
+    private async Task ProcessClientAsync(TcpClient client)
+    {
+        try
+        {
+            using var stream = client.GetStream();
+            using var reader = new StreamReader(stream);
+            var firstLine = await reader.ReadLineAsync();
+            for (string line = null; line != string.Empty; line = await reader.ReadLineAsync())
+                ;
+
+            var request = RequestParser.Parse(firstLine);
+            await _handler.HandleAsync(stream, request);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
     }
 }

@@ -37,5 +37,26 @@ public class StaticFileHandler : IHandler
                 
         System.Console.WriteLine(filePath);
     }
-    
+
+    public async Task HandleAsync(Stream stream, Request request)
+    {
+        using var writer = new StreamWriter(stream);
+        var filePath = Path.Combine(_path, request.Path.Substring(1));
+                
+        if (!File.Exists(filePath))
+        {
+            //TODO: write 404
+            // HTTP/1.0 200 OK
+            // HTTP/1.0 404 NotFound
+            await ResponseWriter.WriteStatusAsync(HttpStatusCode.NotFound, stream);
+        }
+        else
+        {
+            await ResponseWriter.WriteStatusAsync (HttpStatusCode.OK, stream);
+            using var fileStream = File.OpenRead(filePath);
+           await fileStream.CopyToAsync(stream);
+        }
+                
+        System.Console.WriteLine(filePath);
+    }
 }

@@ -5,8 +5,19 @@ namespace ServerFromScratch.Controllers;
 
 public class UsersController : IController
 {
-    public User[] Index()
+    public static User[] Index()
     {
+        Thread.Sleep(5);
+        return new[]
+        {
+            new User("Anton", "Kharchenko", "Zzzzoro"),
+            new User("Johny", "Martin", "HHH")
+        };
+    }
+    
+    public static async Task<User[]> IndexAsync()
+    {
+        await Task.Delay(5);
         return new[]
         {
             new User("Anton", "Kharchenko", "Zzzzoro"),
